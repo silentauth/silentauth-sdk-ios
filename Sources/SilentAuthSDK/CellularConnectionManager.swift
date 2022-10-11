@@ -211,12 +211,15 @@ class CellularConnectionManager: ConnectionManager {
          }
          if let req = requestId {
              cmd += "\r\nx-tru-sdk-request: \(String(describing: req)) "
+             cmd += "\r\nx-silentauth-sdk-request: \(String(describing: req)) "
          }
          if let op = operators {
              cmd += "\r\nx-tru-ops: \(String(describing: op)) "
+             cmd += "\r\nx-silentauth-ops: \(String(describing: op)) "
          }
          #if targetEnvironment(simulator)
              cmd += "\r\nx-tru-mode: sandbox"
+             cmd += "\r\nx-silentauth-mode: sandbox"
          #endif
          if let cookies = cookies {
              var cookieCount = 0
