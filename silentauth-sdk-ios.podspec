@@ -7,7 +7,7 @@ Pod::Spec.new do |spec|
     DESC
     spec.homepage     = "https://github.com/silentauth/silentauth-sdk-ios"
     spec.license      = { :type => "MIT", :file => "LICENSE.md" }
-    spec.author             = { "author" => "eric@tru.id" }
+    spec.author             = { "author" => "community@4auth.io" }
     spec.documentation_url = "https://github.com/silentauth/silentauth-ios/blob/main/README.md"
     spec.platforms = { :ios => "12.0" }
     spec.swift_version = "5.3"
