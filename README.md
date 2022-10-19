@@ -97,7 +97,7 @@ sdk.openWithDataCellular(url: URL(string: "https://eu.api.silentauth.com/public/
 }
 ```
 
-* How to open a check URL return by the [PhoneCheck API](https://developer.silentauth.com/docs/phone-check) or [SubscriberCheck API](https://developer.silentauth.com/docs/subscriber-check)
+* How to open a check URL 
 
 ```swift
 import SilentAuthSDK
