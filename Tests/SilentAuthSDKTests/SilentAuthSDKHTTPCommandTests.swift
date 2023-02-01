@@ -45,7 +45,7 @@ extension SilentAuthSDKHTTPCommandTests {
         let url = URL(string: urlString)!
         let expectation = httpCommand(url: url, sdkVersion: SilentAuthSdkVersion)
 
-        let httpCommand = connectionManager.createHttpCommand(url: url, operators: nil, cookies: nil, requestId: nil)
+        let httpCommand = connectionManager.createHttpCommand(url: url, accessToken: nil, operators: nil, cookies: nil, requestId: nil)
         XCTAssertEqual(expectation, httpCommand)
     }
 
@@ -57,7 +57,7 @@ extension SilentAuthSDKHTTPCommandTests {
 
         let expectation = httpCommand(url: url, sdkVersion: SilentAuthSdkVersion)
 
-        let httpCommand = connectionManager.createHttpCommand(url: url, operators: nil, cookies: nil, requestId: nil)
+        let httpCommand = connectionManager.createHttpCommand(url: url, accessToken: nil, operators: nil, cookies: nil, requestId: nil)
         XCTAssertEqual(expectation, httpCommand)
     }
 
@@ -67,7 +67,7 @@ extension SilentAuthSDKHTTPCommandTests {
 
         let url = URL(string: urlString)!
 
-        let httpCommand = connectionManager.createHttpCommand(url: url, operators: nil, cookies: nil, requestId: nil)
+        let httpCommand = connectionManager.createHttpCommand(url: url, accessToken: nil, operators: nil, cookies: nil, requestId: nil)
 
         XCTAssertNil(httpCommand)
     }
@@ -77,7 +77,7 @@ extension SilentAuthSDKHTTPCommandTests {
 
         let url = URL(string: urlString)!
 
-        let httpCommand = connectionManager.createHttpCommand(url: url, operators: nil, cookies: nil, requestId: nil)
+        let httpCommand = connectionManager.createHttpCommand(url: url, accessToken: nil, operators: nil, cookies: nil, requestId: nil)
 
         XCTAssertNil(httpCommand)
     }
@@ -89,7 +89,7 @@ extension SilentAuthSDKHTTPCommandTests {
 
         let url = URL(string: urlString)!
 
-        let httpCommand = connectionManager.createHttpCommand(url: url, operators: nil, cookies: nil, requestId: nil)
+        let httpCommand = connectionManager.createHttpCommand(url: url, accessToken: nil, operators: nil, cookies: nil, requestId: nil)
 
         XCTAssertNil(httpCommand)
     }
