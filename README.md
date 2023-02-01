@@ -77,10 +77,10 @@ silentauth-sdk-ios: ~115KiB
 import SilentAuthSDK
 
 let sdk: SilentAuthSDK = SilentAuthSDK()
-// retreive access token with coverage scope from back-end
+// retrieve access token with coverage scope from back-end
 let token = ...
 // open the device_ip API endpoint
-sdk.openWithDataCellular(url: URL(string: "https://eu.api.silentauth.com/coverage/v0.1/device_ip")!, accessToken: token, debug: false) { (resp) in
+sdk.openWithDataCellularAndAccessToken(url: URL(string: "https://eu.api.silentauth.com/coverage/v0.1/device_ip")!, accessToken: token, debug: false) { (resp) in
     if (resp["error_code"]) != nil {
         NSLog("\(resp["error_description"])")
     } else {
