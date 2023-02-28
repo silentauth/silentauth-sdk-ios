@@ -2,6 +2,11 @@
 
 Change Log
 ==========
+## Version 1.0.3
+_2023-02-28_
+**Changes**
+- Target platform macOS removed
+
 ## Version 1.0.2
 _2023-02-01_
 **New**
