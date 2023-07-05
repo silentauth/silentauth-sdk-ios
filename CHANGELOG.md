@@ -2,6 +2,13 @@
 
 Change Log
 ==========
+## Version 1.0.4
+_2023-07-05_
+**New**
+- Convenience method `postWithDataCellular`
+**Changes**
+- Bug fix regarding relative redirects
+
 ## Version 1.0.3
 _2023-02-28_
 **Changes**
