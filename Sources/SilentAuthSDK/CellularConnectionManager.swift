@@ -8,7 +8,7 @@ import os
 
 typealias ResultHandler = (ConnectionResult) -> Void
 
-let SilentAuthSdkVersion = "1.0.3"
+let SilentAuthSdkVersion = "1.0.4"
 
 //
 // Force connectivity to cellular only
@@ -101,25 +101,30 @@ class CellularConnectionManager: ConnectionManager {
     }
     
     func convertConnectionResponseToDictionary(resp: ConnectionResponse, debug: Bool)  -> [String : Any] {
+        var json: [String : Any] = [:]
+        json["http_status"] = resp.status
+        if (debug) {
+            let ti = self.traceCollector.traceInfo()
+            var json_debug: [String : Any] = [:]
+            json_debug["device_info"] = ti.debugInfo.deviceString()
+            json_debug["url_trace"] = ti.trace
+            json["debug"] = json_debug
+            self.traceCollector.stopTrace()
+        }
         do {
-            var json: [String : Any] = [:]
-            json["http_status"] = resp.status
-            if (debug) {
-                let ti = self.traceCollector.traceInfo()
-                var json_debug: [String : Any] = [:]
-                json_debug["device_info"] = ti.debugInfo.deviceString()
-                json_debug["url_trace"] = ti.trace
-                json["debug"] = json_debug
-                self.traceCollector.stopTrace()
-            }
             // load JSON response into a dictionary
             if let body = resp.body, let dictionary = try JSONSerialization.jsonObject(with: body, options: .mutableContainers) as? [String : Any] {
                 json["response_body"] = dictionary
             }
-            return json
         } catch {
-            return convertNetworkErrorToDictionary(err: NetworkError.other("JSON deserializarion"), debug: debug)
+            if let body = resp.body {
+                            json["response_raw_body"] = body
+                        } else {
+                            return convertNetworkErrorToDictionary(err: NetworkError.other("JSON deserializarion"), debug: debug)
+                        }
+                        
         }
+        return json
     }
     
     func convertNetworkErrorToDictionary(err: NetworkError, debug: Bool) -> [String : Any] {
@@ -308,7 +313,7 @@ class CellularConnectionManager: ConnectionManager {
             // some location header are not properly encoded
             let cleanRedirect = redirect.replacingOccurrences(of: " ", with: "+")
             if let redirectURL =  URL(string: String(cleanRedirect)) {
-                return RedirectResult(url: redirectURL.host == nil ? URL(string: redirectURL.path, relativeTo: requestUrl)! : redirectURL, cookies: self.parseCookies(url:requestUrl, response: response, existingCookies: cookies))
+                return RedirectResult(url: redirectURL.host == nil ? URL(string: redirectURL.description, relativeTo: requestUrl)! : redirectURL, cookies: self.parseCookies(url:requestUrl, response: response, existingCookies: cookies))
             } else {
                 self.traceCollector.addDebug(log: "URL malformed \(cleanRedirect)")
                 return nil
@@ -414,8 +419,7 @@ class CellularConnectionManager: ConnectionManager {
     }
     
     
-    func activateConnectionForDataFetch(url: URL, accessToken: String?, operators: String?, cookies: [HTTPCookie]?, requestId: String?, completion: @escaping ResultHandler) {
-           self.cancelExistingConnection()
+    func activateConnectionForDataFetch(url: URL, accessToken: String?, operators: String?, cookies: [HTTPCookie]?, requestId: String?, completion: @escaping ResultHandler) {self.cancelExistingConnection()
            guard let scheme = url.scheme,
                  let host = url.host else {
                completion(.err(NetworkError.other("URL has no Host or Scheme")))
@@ -452,6 +456,8 @@ class CellularConnectionManager: ConnectionManager {
 
             }
         }))
+        
+        timer?.invalidate()
 
         //Read the entire response body
         connection?.receiveMessage { data, context, isComplete, error in
@@ -544,10 +550,177 @@ class CellularConnectionManager: ConnectionManager {
         }
         return nil
     }
+    
+    
+    // Utils
+    func post(url: URL, headers: [String : Any], body: String?, completion: @escaping ([String : Any]) -> Void) {
+        
+        guard let _ = url.scheme, let _ = url.host else {
+            completion(convertNetworkErrorToDictionary(err:NetworkError.other("No scheme or host found"), debug: false))
+            return
+        }
+        
+        // This closure will be called on main thread
+        checkResponseHandler = { [weak self] (response) -> Void in
+            
+            guard let self = self else {
+                completion(self!.convertNetworkErrorToDictionary(err: NetworkError.other("Unable to carry on"), debug: false))
+                return
+            }
+            
+            switch response {
+            case .follow(_):
+                self.cleanUp()
+                completion(self.convertNetworkErrorToDictionary(err: NetworkError.other("Unexpected status"), debug: false))
+            case .err(let error):
+                self.cleanUp()
+                completion(self.convertNetworkErrorToDictionary(err: error, debug: false))
+            case .dataOK(let connResp):
+                self.cleanUp()
+                completion(self.convertConnectionResponseToDictionary(resp: connResp, debug: false))
+            case .dataErr(let connResp):
+                self.cleanUp()
+                completion(self.convertConnectionResponseToDictionary(resp: connResp, debug: false))
+            }
+        }
+        //Initiating on the main thread to synch, as all connection update/state events will also be called on main thread
+        DispatchQueue.main.async {
+            self.startMonitoring()
+            self.createTimer()
+            self.activateConnectionForData(url: url, headers: headers, body: body, completion: self.checkResponseHandler)
+        }
+    }
+    
+    func createPostCommand(url: URL, headers: [String : Any], body: String?) -> String? {
+        guard let host = url.host, let scheme = url.scheme  else {
+            return nil
+        }
+        var path = url.path
+        // the path method is stripping ending / so adding it back
+        if (url.absoluteString.hasSuffix("/") && !url.path.hasSuffix("/")) {
+            path += "/"
+        }
+        var cmd = String(format: "POST %@", path)
+        
+        if let q = url.query {
+            cmd += String(format:"?%@", q)
+        }
+        
+        cmd += String(format:" HTTP/1.1\r\nHost: %@", host)
+        if (scheme.starts(with:"https") && url.port != nil && url.port != 443) {
+            cmd += String(format:":%d", url.port!)
+        } else if (scheme.starts(with:"http") && url.port != nil && url.port != 80) {
+            cmd += String(format:":%d", url.port!)
+        }
+        for (key, value) in headers {
+            cmd += "\r\n\(key): \(value)"
+        }
+        
+        if let body = body {
+            cmd += "\r\nContent-Length: \(body.count)"
+            cmd += "\r\nConnection: close\r\n\r\n"
+            cmd += "\(body)\r\n\r\n"
+        } else {
+            cmd += "\r\nContent-Length: 0"
+            cmd += "\r\nConnection: close\r\n\r\n"
+            
+        }
+        return cmd
+    }
+    
+    func activateConnectionForData(url: URL, headers: [String : Any], body: String?, completion: @escaping ResultHandler) {
+        self.cancelExistingConnection()
+        guard let scheme = url.scheme,
+              let host = url.host else {
+            completion(.err(NetworkError.other("URL has no Host or Scheme")))
+            return
+        }
+        
+        guard let command = createPostCommand(url: url, headers: headers, body: body),
+              let data = command.data(using: .utf8) else {
+            completion(.err(NetworkError.other("Unable to create HTTP Request command")))
+            return
+        }
+        
+        self.traceCollector.addDebug(log: "sending data:\n\(command)")
+        self.traceCollector.addTrace(log: "\ncommand:\n\(command)")
+        
+        connection = createConnection(scheme: scheme, host: host, port: url.port)
+        if let connection = connection {
+            connection.stateUpdateHandler = createConnectionUpdateHandler(completion: completion, readyStateHandler: { [weak self] in
+                self?.sendAndReceiveWithBody(requestUrl: url, data: data, completion: completion)
+            })
+            // All connection events will be delivered on the main thread.
+            connection.start(queue: .main)
+        } else {
+            os_log("Problem creating a connection ", url.absoluteString)
+            completion(.err(NetworkError.connectionCantBeCreated("Problem creating a connection \(url.absoluteString)")))
+        }
+    }
+    
+    func sendAndReceiveWithBody(requestUrl: URL, data: Data, completion: @escaping ResultHandler) {
+        connection?.send(content: data, completion: NWConnection.SendCompletion.contentProcessed({ (error) in
+            if let err = error {
+                os_log("Sending error %s", type: .error, err.localizedDescription)
+                completion(.err(NetworkError.other(err.localizedDescription)))
+                
+            }
+        }))
+        
+        timer?.invalidate()
+
+        //Read the entire response body
+        connection?.receiveMessage { data, context, isComplete, error in
+            
+            os_log("Receive isComplete: %s", isComplete.description)
+            if let err = error {
+                completion(.err(NetworkError.other(err.localizedDescription)))
+                return
+            }
+            
+            if let d = data, !d.isEmpty, let response = self.decodeResponse(data: d) {
+                
+                os_log("Response:\n %s", response)
+                
+                let status = self.parseHttpStatusCode(response: response)
+                os_log("\n----\nHTTP status: %s", String(status))
+                
+                switch status {
+                case 200...202:
+                    if let r = self.getResponseBody(response: response) {
+                        completion(.dataOK(ConnectionResponse(status: status, body: r)))
+                    } else {
+                        completion(.dataOK(ConnectionResponse(status: status, body: nil)))
+                    }
+                case 204:
+                    completion(.dataOK(ConnectionResponse(status: status, body: nil)))
+                case 301...399:
+                    completion(.err(NetworkError.other("Unexpected HTTP Status \(status)")))
+                case 400...451:
+                    if let r = self.getResponseBody(response: response) {
+                        completion(.dataErr(ConnectionResponse(status: status, body:r)))
+                    } else {
+                        completion(.err(NetworkError.other("Unexpected HTTP Status \(status)")))
+                    }
+                case 500...511:
+                    if let r = self.getResponseBody(response: response) {
+                        completion(.dataErr(ConnectionResponse(status: status, body:r)))
+                    } else {
+                        completion(.err(NetworkError.other("Unexpected HTTP Status \(status)")))
+                    }
+                default:
+                    completion(.err(NetworkError.other("Unexpected HTTP Status \(status)")))
+                }
+            } else {
+                completion(.err(NetworkError.other("Response has no data or corrupt")))
+            }
+        }
+    }
 }
 
 protocol ConnectionManager {
     func open(url: URL, accessToken: String?, debug: Bool, operators: String?, completion: @escaping ([String : Any]) -> Void)
+    func post(url: URL, headers: [String : Any], body: String?, completion: @escaping ([String : Any]) -> Void)
 }
 
 public struct RedirectResult {

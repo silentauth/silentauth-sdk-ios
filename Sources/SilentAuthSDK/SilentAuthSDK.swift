@@ -52,5 +52,10 @@ open class SilentAuthSDK {
     public func openWithDataCellularAndAccessToken(url: URL, accessToken: String?, debug: Bool, completion: @escaping ([String : Any]) -> Void) {
         connectionManager.open(url: url, accessToken: accessToken, debug: debug, operators: self.operators, completion: completion)
     }
+    /// Convenience method to perform a POST request over  a data cellular connectivity
+        public func  postWithCellularData(url: URL, headers: [String : Any], body: String?, completion: @escaping ([String : Any]) -> Void) {
+            connectionManager.post(url: url, headers: headers, body: body, completion: completion)
+        }
+
 
 }

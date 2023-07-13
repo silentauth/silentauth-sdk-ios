@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
     spec.name         = "silentauth-sdk-ios"
-    spec.version      = "1.0.3"
+    spec.version      = "1.0.4"
     spec.summary      = "SDK for SilentAuth"
     spec.description  = <<-DESC
     iOS SDK for SilentAuth: SIM Based Authentication.
