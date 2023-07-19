@@ -8,7 +8,7 @@ open class SilentAuthSDK {
 
     init(connectionManager: ConnectionManager) {
         self.connectionManager = connectionManager
-        // retreive operators associated with handset:
+        // retrieve operators associated with handset:
         // a commas separated list of mobile operators (MCCMNC)
         let t = CTTelephonyNetworkInfo()
         var ops: Array<String> = Array()
