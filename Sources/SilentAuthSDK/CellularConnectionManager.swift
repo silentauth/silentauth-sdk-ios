@@ -8,7 +8,7 @@ import os
 
 typealias ResultHandler = (ConnectionResult) -> Void
 
-let SilentAuthSdkVersion = "1.0.4"
+let SilentAuthSdkVersion = "1.0.5"
 
 //
 // Force connectivity to cellular only
@@ -149,7 +149,7 @@ class CellularConnectionManager: ConnectionManager {
         if (debug) {
             let ti = self.traceCollector.traceInfo()
             var json_debug: [String : Any] = [:]
-            json_debug["device_info"] = ti.debugInfo
+            json_debug["device_info"] = ti.debugInfo.deviceString()
             json_debug["url_trace"] = ti.trace
             json["debug"] = json_debug
             self.traceCollector.stopTrace()
