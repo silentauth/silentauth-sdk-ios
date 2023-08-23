@@ -2,6 +2,11 @@
 
 Change Log
 ==========
+## Version 1.0.7
+_2023-08-21_
+**Bug Fix**
+- self unwrapped exception in closure
+
 ## Version 1.0.6
 _2023-08-14_
 **Bug Fix**
