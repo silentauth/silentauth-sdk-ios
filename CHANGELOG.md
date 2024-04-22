@@ -2,6 +2,11 @@
 
 Change Log
 ==========
+## Version 1.0.10
+_2024-04-22_
+**New**
+- PrivacyInfo added as per AppStore requirements
+
 ## Version 1.0.9
 _2024-03-04_
 **Changes**
