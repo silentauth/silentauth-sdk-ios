@@ -8,7 +8,7 @@ import os
 
 typealias ResultHandler = (ConnectionResult) -> Void
 
-let SilentAuthSdkVersion = "1.0.9"
+let SilentAuthSdkVersion = "1.0.10"
 
 //
 // Force connectivity to cellular only

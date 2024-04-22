@@ -13,5 +13,6 @@ Pod::Spec.new do |spec|
     spec.swift_version = "5.3"
     spec.source       = { :git => "https://github.com/silentauth/silentauth-sdk-ios.git", :tag => "#{spec.version}" }
     spec.source_files  = "Sources/SilentAuthSDK/**/*.swift"
+    spec.resource_bundles ={ "silentauth-sdk-ios" => ["Sources/PrivacyInfo.xcprivacy"]}
     spec.xcconfig = { "SWIFT_VERSION" => "5.3" }
 end
